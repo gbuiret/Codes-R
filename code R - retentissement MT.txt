@@ -1,0 +1,247 @@
+k1<-read.csv2 ("D:/science/thèse/étude/nom des patients.csv")
+k<-read.csv2 ("D:/science/thèse/étude/data.csv")
+k$GPRfac <- as.factor(k$GPR)
+k$mucite01fac <- as.factor(k$mucite01)
+k$candidose01fac <- as.factor(k$candidose01)
+library(prettyR) 
+library(nlme)
+library(gplots) 
+library(ggplot2)
+library(patchwork)
+
+metal<-subset(k,k$goutmetallique==1)
+nonmetal<-subset(k,k$goutmetallique==0)
+nommetal<-metalpers<-subset(k1,k1$goutmetal==1)
+nomnonmetal<-metalpers<-subset(k1,k1$goutmetal==0)
+#############
+#Démographie#
+#############
+
+#age
+describe (nommetal$age) 
+describe (nomnonmetal$age) 
+t.test(nommetal$age,nomnonmetal$age)
+#sexe
+table(k1$sexe,k1$goutmetal)
+chisq.test(k1$sexe,k1$goutmetal)
+#localisation
+table (nommetal$localisation)
+
+#rapport localsiation MT
+table(k1$localisation,k1$goutmetal)
+chisq.test(k1$localisation,k1$goutmetal)
+
+#rapport T/ MT
+table(k1$T,k1$goutmetal)
+chisq.test(k1$T,k1$goutmetal)
+#rapport N/ MT
+table(k1$N,k1$goutmetal)
+chisq.test(k1$N,k1$goutmetal)
+#rapport tabagisme/ MT
+table(k1$tabagisme,k1$goutmetal)
+chisq.test(k1$tabagisme,k1$goutmetal)
+#rapport ttt MT
+table(k1$ttt,k1$goutmetal)
+chisq.test(k1$ttt,k1$goutmetal)
+
+#############################################
+#evolution de l'intensité du gout métallique#
+#############################################
+
+pz<-ggplot(metal,aes(x=Moment,y=Q235)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("MT intensity")
+pz
+
+#######
+#poids#
+#######
+
+#poids sur un même graphique
+interaction.plot(k$Moment,k$nom,k$poids, xlab="temps", ylab="poids (kg)", legend=F,ylim=c(30,120))
+plotmeans(k$poids~k$Moment, gap=0, barcol= "black",ylim=c(0,100),xlab="Moment", ylab="poids (kg)")
+
+# Créer le graphique avec les couleurs spécifiées pour chaque niveau de GPR
+pab <- ggplot(k, aes(x = Moment, y = poids, group = GPRfac, col = GPRfac)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1, 8), ylim = c(0, 100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) +  # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") +  # Supprime la légende des couleurs
+  ggtitle("B") +
+  scale_color_manual(values = c("0" = "black", "1" = "red"))  #
+
+pac <- ggplot(k, aes(x = Moment, y = poids, group = mucite01fac, col = mucite01fac)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1, 8), ylim = c(0, 100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) +  # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") +  # Supprime la légende des couleurs
+  ggtitle("C") +
+  scale_color_manual(values = c("0" = "black", "1" = "green"))  #
+
+pad <- ggplot(k, aes(x = Moment, y = poids, group = candidose01fac, col = candidose01fac)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1, 8), ylim = c(0, 100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) +  # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") +  # Supprime la légende des couleurs
+  ggtitle("D") +
+  scale_color_manual(values = c("0" = "black", "1" = "orange"))  #
+
+#créer le graphique selon le statut MT
+paa<-ggplot(k,aes(x=Moment,y=poids,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+(paa+pab)/(pac+pad)
+
+pa<-ggplot(k,aes(x=Moment,y=poids)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("Weight (kg)")
+pb<-ggplot(k,aes(x=Moment,y=poids,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("Weight (kg)")
+pa+pb
+#poids sur graphiques séparés
+gDpoids=groupedData(data=k,poids~Moment|nom)
+plot(gDpoids, xlab="Moment", ylab="poids (kg)")
+lmpoids=lme(gDpoids,na.action=na.omit)
+summary(lmpoids)
+#poids selon métallique ou non
+poidsmetal <- lme(poids ~ Moment * goutmetallique, random = ~ 1 | nom, data = k,na.action=na.omit)
+summary(poidsmetal)
+
+
+#################
+#EVA alimentaire#
+#################
+#EVA sur un même graphique
+interaction.plot(k$Moment,k$nom,k$EVAalim, xlab="Moment", ylab="VAS for food", legend=F,ylim=c(0,10))
+plotmeans(k$EVAalim~k$Moment, gap=0, barcol= "black",ylim=c(0,10),xlab="Moment", ylab="VAS for food")
+pc<-ggplot(k,aes(x=Moment,y=EVAalim)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 10)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("VAS for food")
+
+# Créer le graphique avec les couleurs spécifiées pour chaque niveau de GPR
+pda <- ggplot(k, aes(x = Moment, y = EVAalim, group = GPRfac, col = GPRfac)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1, 8), ylim = c(0, 10)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) +  # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") +  # Supprime la légende des couleurs
+  ggtitle("B") +
+  scale_color_manual(values = c("0" = "black", "1" = "red"))  #
+
+pdc <- ggplot(k, aes(x = Moment, y = EVAalim, group = mucite01fac, col = mucite01fac)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1, 8), ylim = c(0, 10)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) +  # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") +  # Supprime la légende des couleurs
+  ggtitle("C") +
+  scale_color_manual(values = c("0" = "black", "1" = "green"))  #
+
+pdd <- ggplot(k, aes(x = Moment, y = EVAalim, group = candidose01fac, col = candidose01fac)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1, 8), ylim = c(0, 10)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) +  # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") +  # Supprime la légende des couleurs
+  ggtitle("D") +
+  scale_color_manual(values = c("0" = "black", "1" = "orange"))  #
+
+#créer le graphique selon le statut MT
+pdb<-ggplot(k,aes(x=Moment,y=EVAalim,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 10)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+(pdb+pda)/(pdc+pdd)
+
+VAS <- lme(EVAalim ~ Moment * goutmetallique, random = ~ 1 | nom, data = k,na.action=na.omit)
+summary(VAS)
+VAS2 <- lme(EVAalim ~ poly(Moment,2) * goutmetallique, random = ~ 1 | nom, data = k,na.action=na.omit)
+summary(VAS2)
+anova(VAS,VAS2)
+#Impact MT
+table (metal$Q235)
+table (metal$Q236)
+table (metal$Q237)
+table (metal$Q238)
+table (metal$Q239)
+table (metal$Q240)
+table (metal$Q241)
+
+##############
+#EVA comment vous sentez-vous#
+##############################
+
+#Q129
+describe(metal$Q129)
+describe(nonmetal$Q129)
+t.test(Q129~goutmetallique, data=k)
+
+#Q130
+describe(metal$Q130)
+describe(nonmetal$Q130)
+t.test(Q130~goutmetallique, data=k)
+###########
+#EORTCgout#
+###########
+
+#EORTC sur un même graphique
+interaction.plot(k$Moment,k$nom,k$Q144, xlab="Moment", ylab="VAS for dysgeusia", legend=F,ylim=c(0,4))
+plotmeans(k$Q144~k$Moment, gap=0, barcol= "black",ylim=c(0,4),xlab="Moment", ylab="VAS for dysgeusia")
+pe<-ggplot(k,aes(x=Moment,y=Q144)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 4)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("VAS for dysgeusia")
+pf<-ggplot(k,aes(x=Moment,y=Q144,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 4)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("EORTC HN35 #44")
+pe+pf
+
+q144 <- lme(Q144 ~ Moment * goutmetallique, random = ~ 1 | nom, data = k,na.action=na.omit)
+summary(q144)
+q1442 <- lme(Q144 ~ poly(Moment,2) * goutmetallique, random = ~ 1 | nom, data = k,na.action=na.omit)
+summary(q1442)
+anova(q144,q1442)

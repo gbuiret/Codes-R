@@ -1,0 +1,768 @@
+k1<-read.csv2 ("D:/science/thèse/étude/nom des patients.csv")
+k<-read.csv2 ("D:/science/thèse/étude/data.csv")
+
+library(prettyR) 
+library(nlme)
+library(gplots) 
+library(ggplot2)
+library(patchwork)
+metal<-subset(k,k$goutmetallique==1)
+nonmetal<-subset(k,k$goutmetallique==0)
+mom1<-subset(k,k$Moment==1)
+mom2<-subset(k,k$Moment==2)
+mom3<-subset(k,k$Moment==3)
+mom4<-subset(k,k$Moment==4)
+mom5<-subset(k,k$Moment==5)
+
+
+#############
+#Démographie#
+#############
+
+#age
+describe (k1$age) 
+#sexe
+describe (k1$sexe) 
+#localisation
+table (k1$localisation)
+#######
+#poids#
+#######
+
+#poids sur un même graphique
+interaction.plot(k$Moment,k$nom,k$poids, xlab="temps", ylab="poids (kg)", legend=F,ylim=c(30,120))
+plotmeans(k$poids~k$Moment, gap=0, barcol= "black",ylim=c(0,100),xlab="Moment", ylab="poids (kg)")
+pa<-ggplot(k,aes(x=Moment,y=poids)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("Weight (kg)")
+pb<-ggplot(k,aes(x=Moment,y=poids,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("Weight (kg)")
+pa+pb
+#poids sur graphiques séparés
+gDpoids=groupedData(data=k,poids~Moment|nom)
+plot(gDpoids, xlab="Moment", ylab="poids (kg)")
+lmpoids=lme(gDpoids,na.action=na.omit)
+summary(lmpoids)
+
+########
+#salive#
+########
+
+#salive sur un même graphique
+interaction.plot(k$Moment,k$nom,k$salive, xlab="Moment", ylab="débit salivaire (ml/10 min)", legend=F,ylim=c(0,15))
+plotmeans(k$salive~k$Moment, gap=0, barcol= "black",ylim=c(0,5),xlab="Moment", ylab="salive (g/10 min")
+pc<-ggplot(k,aes(x=Moment,y=salive)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("Salivary flow (g/10 min)")
+pd<-ggplot(k,aes(x=Moment,y=salive,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("Salivary flow (g/10 min)")
+pc+pd
+#salive sur graphiques séparés
+gDsalive=groupedData(data=k,salive~Moment|nom)
+plot(gDsalive, xlab="Moment", ylab="Débit salivaire (ml/10 min)",ylim=c(0,15))
+
+#################
+#gout métallique#
+#################
+gDmetal=groupedData(data=k,goutmetallique~Moment|nom)
+plot(gDmetal, xlab="temps", ylab="Temporality of metallic taste",ylim=c(0,2))
+
+#corrélation temporalité et sensorialité
+chisq.test(k$senso1Aidentification,k$Moment)
+t.test(k$senso1Aintensite~k$Moment)
+chisq.test(k$senso2Aidentification,k$Moment)
+chisq.test(k$senso2Aintensite,k$Moment)
+chisq.test(k$senso3Aidentification,k$Moment)
+chisq.test(k$senso3Aintensite,k$Moment)
+chisq.test(k$senso4Aidentification,k$Moment)
+chisq.test(k$senso4Aintensite,k$Moment)
+chisq.test(k$senso5Aidentification,k$Moment)
+chisq.test(k$senso5Aintensite,k$Moment)
+chisq.test(k$senso6Aidentification,k$Moment)
+chisq.test(k$senso6Aintensite,k$Moment)
+
+#correlation MT et sensorialité
+#point A
+#eau
+table(k$senso1Aidentification,k$goutmetallique)
+chisq.test(k$senso1Aidentification,k$goutmetallique)
+chisq.test(mom2$senso1Aidentification,mom2$goutmetallique)
+chisq.test(mom3$senso1Aidentification,mom3$goutmetallique)
+chisq.test(mom4$senso1Aidentification,mom4$goutmetallique)
+chisq.test(mom5$senso1Aidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso1Aintensite~goutmetallique,data=k)
+t.test(senso1Aintensite~goutmetallique,data=mom2)
+t.test(senso1Aintensite~goutmetallique,data=mom3)
+t.test(senso1Aintensite~goutmetallique,data=mom4)
+t.test(senso1Aintensite~goutmetallique,data=mom5)
+
+#salé
+chisq.test(k$senso2Aidentification,k$goutmetallique)
+chisq.test(mom2$senso2Aidentification,mom2$goutmetallique)
+chisq.test(mom3$senso2Aidentification,mom3$goutmetallique)
+chisq.test(mom4$senso2Aidentification,mom4$goutmetallique)
+chisq.test(mom5$senso2Aidentification,mom5$goutmetallique)
+table(k$senso2Aintensite,k$goutmetallique)
+t.test(senso2Aintensite~goutmetallique,data=k)
+t.test(senso2Aintensite~goutmetallique,data=mom2)
+t.test(senso2Aintensite~goutmetallique,data=mom3)
+t.test(senso2Aintensite~goutmetallique,data=mom4)
+t.test(senso2Aintensite~goutmetallique,data=mom5)
+
+#amer
+chisq.test(k$senso3Aidentification,k$goutmetallique)
+chisq.test(mom2$senso3Aidentification,mom2$goutmetallique)
+chisq.test(mom3$senso3Aidentification,mom3$goutmetallique)
+chisq.test(mom4$senso3Aidentification,mom4$goutmetallique)
+chisq.test(mom5$senso3Aidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso3Aintensite~goutmetallique,data=k)
+t.test(senso3Aintensite~goutmetallique,data=mom2)
+t.test(senso3Aintensite~goutmetallique,data=mom3)
+t.test(senso3Aintensite~goutmetallique,data=mom4)
+t.test(senso3Aintensite~goutmetallique,data=mom5)
+
+
+#acide
+chisq.test(k$senso4Aidentification,k$goutmetallique)
+chisq.test(mom2$senso4Aidentification,mom2$goutmetallique)
+chisq.test(mom3$senso4Aidentification,mom3$goutmetallique)
+chisq.test(mom4$senso4Aidentification,mom4$goutmetallique)
+chisq.test(mom5$senso4Aidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso4Aintensite~goutmetallique,data=k)
+t.test(senso4Aintensite~goutmetallique,data=mom2)
+t.test(senso4Aintensite~goutmetallique,data=mom3)
+t.test(senso4Aintensite~goutmetallique,data=mom4)
+t.test(senso4Aintensite~goutmetallique,data=mom5)
+
+#sucré
+chisq.test(k$senso5Aidentification,k$goutmetallique)
+chisq.test(mom2$senso5Aidentification,mom2$goutmetallique)
+chisq.test(mom3$senso5Aidentification,mom3$goutmetallique)
+chisq.test(mom4$senso5Aidentification,mom4$goutmetallique)
+chisq.test(mom5$senso5Aidentification,mom5$goutmetallique)
+table(k$senso5Aintensite,k$goutmetallique)
+t.test(senso5Aintensite~goutmetallique,data=k)
+t.test(senso5Aintensite~goutmetallique,data=mom2)
+t.test(senso5Aintensite~goutmetallique,data=mom3)
+t.test(senso5Aintensite~goutmetallique,data=mom4)
+t.test(senso5Aintensite~goutmetallique,data=mom5)
+
+#métallique
+chisq.test(k$senso6Aidentification,k$goutmetallique)
+chisq.test(mom2$senso6Aidentification,mom2$goutmetallique)
+chisq.test(mom3$senso6Aidentification,mom3$goutmetallique)
+chisq.test(mom4$senso6Aidentification,mom4$goutmetallique)
+chisq.test(mom5$senso6Aidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso6Aintensite~goutmetallique,data=k)
+t.test(senso6Aintensite~goutmetallique,data=mom2)
+t.test(senso6Aintensite~goutmetallique,data=mom3)
+t.test(senso6Aintensite~goutmetallique,data=mom4)
+t.test(senso6Aintensite~goutmetallique,data=mom5)
+
+#point B
+#eau
+chisq.test(k$senso2Bidentification,k$goutmetallique)
+chisq.test(mom2$senso2Bidentification,mom2$goutmetallique)
+chisq.test(mom3$senso2Bidentification,mom3$goutmetallique)
+chisq.test(mom4$senso2Bidentification,mom4$goutmetallique)
+chisq.test(mom5$senso2Bidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso2Bintensite~goutmetallique,data=k)
+t.test(senso2Bintensite~goutmetallique,data=mom2)
+t.test(senso2Bintensite~goutmetallique,data=mom3)
+t.test(senso2Bintensite~goutmetallique,data=mom4)
+t.test(senso2Bintensite~goutmetallique,data=mom5)
+
+#salé
+chisq.test(k$senso3Bidentification,k$goutmetallique)
+chisq.test(mom2$senso3Bidentification,mom2$goutmetallique)
+chisq.test(mom3$senso3Bidentification,mom3$goutmetallique)
+chisq.test(mom4$senso3Bidentification,mom4$goutmetallique)
+chisq.test(mom5$senso3Bidentification,mom5$goutmetallique)
+table(k$senso3Bintensite,k$goutmetallique)
+t.test(senso3Bintensite~goutmetallique,data=k)
+t.test(senso3Bintensite~goutmetallique,data=mom2)
+t.test(senso3Bintensite~goutmetallique,data=mom3)
+t.test(senso3Bintensite~goutmetallique,data=mom4)
+t.test(senso3Bintensite~goutmetallique,data=mom5)
+
+#amer
+chisq.test(k$senso4Bidentification,k$goutmetallique)
+chisq.test(mom2$senso4Bidentification,mom2$goutmetallique)
+chisq.test(mom3$senso4Bidentification,mom3$goutmetallique)
+chisq.test(mom4$senso4Bidentification,mom4$goutmetallique)
+chisq.test(mom5$senso4Bidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso4Bintensite~goutmetallique,data=k)
+t.test(senso4Bintensite~goutmetallique,data=mom2)
+t.test(senso4Bintensite~goutmetallique,data=mom3)
+t.test(senso4Bintensite~goutmetallique,data=mom4)
+t.test(senso4Bintensite~goutmetallique,data=mom5)
+
+#acide
+chisq.test(k$senso1Bidentification,k$goutmetallique)
+chisq.test(mom2$senso1Bidentification,mom2$goutmetallique)
+chisq.test(mom3$senso1Bidentification,mom3$goutmetallique)
+chisq.test(mom4$senso1Bidentification,mom4$goutmetallique)
+chisq.test(mom5$senso1Bidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso1Bintensite~goutmetallique,data=k)
+t.test(senso1Bintensite~goutmetallique,data=mom2)
+t.test(senso1Bintensite~goutmetallique,data=mom3)
+t.test(senso1Bintensite~goutmetallique,data=mom4)
+t.test(senso1Bintensite~goutmetallique,data=mom5)
+
+#sucré
+chisq.test(k$senso6Bidentification,k$goutmetallique)
+chisq.test(mom2$senso6Bidentification,mom2$goutmetallique)
+chisq.test(mom3$senso6Bidentification,mom3$goutmetallique)
+chisq.test(mom4$senso6Bidentification,mom4$goutmetallique)
+chisq.test(mom5$senso6Bidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso6Bintensite~goutmetallique,data=k)
+t.test(senso6Bintensite~goutmetallique,data=mom2)
+t.test(senso6Bintensite~goutmetallique,data=mom3)
+t.test(senso6Bintensite~goutmetallique,data=mom4)
+t.test(senso6Bintensite~goutmetallique,data=mom5)
+
+
+#métallique
+chisq.test(k$senso5Bidentification,k$goutmetallique)
+chisq.test(mom2$senso5Bidentification,mom2$goutmetallique)
+chisq.test(mom3$senso5Bidentification,mom3$goutmetallique)
+chisq.test(mom4$senso5Bidentification,mom4$goutmetallique)
+chisq.test(mom5$senso5Bidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso5Bintensite~goutmetallique,data=k)
+t.test(senso5Bintensite~goutmetallique,data=mom2)
+t.test(senso5Bintensite~goutmetallique,data=mom3)
+t.test(senso5Bintensite~goutmetallique,data=mom4)
+t.test(senso5Bintensite~goutmetallique,data=mom5)
+
+#point C
+#eau
+chisq.test(k$senso6Cidentification,k$goutmetallique)
+chisq.test(mom2$senso6Cidentification,mom2$goutmetallique)
+chisq.test(mom3$senso6Cidentification,mom3$goutmetallique)
+chisq.test(mom4$senso6Cidentification,mom4$goutmetallique)
+chisq.test(mom5$senso6Cidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso6Cintensite~goutmetallique,data=k)
+t.test(senso6Cintensite~goutmetallique,data=mom2)
+t.test(senso6Cintensite~goutmetallique,data=mom3)
+t.test(senso6Cintensite~goutmetallique,data=mom4)
+t.test(senso6Cintensite~goutmetallique,data=mom5)
+
+#salé
+chisq.test(k$senso1Cidentification,k$goutmetallique)
+chisq.test(mom2$senso1Cidentification,mom2$goutmetallique)
+chisq.test(mom3$senso1Cidentification,mom3$goutmetallique)
+chisq.test(mom4$senso1Cidentification,mom4$goutmetallique)
+chisq.test(mom5$senso1Cidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso1Cintensite~goutmetallique,data=k)
+t.test(senso1Cintensite~goutmetallique,data=mom2)
+t.test(senso1Cintensite~goutmetallique,data=mom3)
+t.test(senso1Cintensite~goutmetallique,data=mom4)
+t.test(senso1Cintensite~goutmetallique,data=mom5)
+
+#amer
+chisq.test(k$senso5Cidentification,k$goutmetallique)
+chisq.test(mom2$senso5Cidentification,mom2$goutmetallique)
+chisq.test(mom3$senso5Cidentification,mom3$goutmetallique)
+chisq.test(mom4$senso5Cidentification,mom4$goutmetallique)
+chisq.test(mom5$senso5Cidentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso5Cintensite~goutmetallique,data=k)
+t.test(senso5Cintensite~goutmetallique,data=mom2)
+t.test(senso5Cintensite~goutmetallique,data=mom3)
+t.test(senso5Cintensite~goutmetallique,data=mom4)
+t.test(senso5Cintensite~goutmetallique,data=mom5)
+
+#acide
+chisq.test(k$senso2Cidentification,k$goutmetallique)
+chisq.test(mom2$senso2Cidentification,mom2$goutmetallique)
+chisq.test(mom3$senso2Cidentification,mom3$goutmetallique)
+chisq.test(mom4$senso2Cidentification,mom4$goutmetallique)
+chisq.test(mom5$senso2Cidentification,mom5$goutmetallique)
+table(k$senso2Cintensite,k$goutmetallique)
+t.test(senso2Cintensite~goutmetallique,data=k)
+t.test(senso2Cintensite~goutmetallique,data=mom2)
+t.test(senso2Cintensite~goutmetallique,data=mom3)
+t.test(senso2Cintensite~goutmetallique,data=mom4)
+t.test(senso2Cintensite~goutmetallique,data=mom5)
+
+#sucré
+chisq.test(k$senso4Cidentification,k$goutmetallique)
+chisq.test(mom2$senso4Cidentification,mom2$goutmetallique)
+chisq.test(mom3$senso4Cidentification,mom3$goutmetallique)
+chisq.test(mom4$senso4Cidentification,mom4$goutmetallique)
+chisq.test(mom5$senso4Cidentification,mom5$goutmetallique)
+table(k$senso4Cintensite,k$goutmetallique)
+t.test(senso4Cintensite~goutmetallique,data=k)
+t.test(senso4Cintensite~goutmetallique,data=mom2)
+t.test(senso4Cintensite~goutmetallique,data=mom3)
+t.test(senso4Cintensite~goutmetallique,data=mom4)
+t.test(senso4Cintensite~goutmetallique,data=mom5)
+
+#métallique
+chisq.test(k$senso3Cidentification,k$goutmetallique)
+chisq.test(mom2$senso3Cidentification,mom2$goutmetallique)
+chisq.test(mom3$senso3Cidentification,mom3$goutmetallique)
+chisq.test(mom4$senso3Cidentification,mom4$goutmetallique)
+chisq.test(mom5$senso3Cidentification,mom5$goutmetallique)
+table(k$senso3Cintensite,k$goutmetallique)
+t.test(senso3Cintensite~goutmetallique,data=k)
+t.test(senso3Cintensite~goutmetallique,data=mom2)
+t.test(senso3Cintensite~goutmetallique,data=mom3)
+t.test(senso3Cintensite~goutmetallique,data=mom4)
+t.test(senso3Cintensite~goutmetallique,data=mom5)
+
+#point D
+#salé
+chisq.test(k$senso2Didentification,k$goutmetallique)
+chisq.test(mom2$senso2Didentification,mom2$goutmetallique)
+chisq.test(mom3$senso2Didentification,mom3$goutmetallique)
+chisq.test(mom4$senso2Didentification,mom4$goutmetallique)
+chisq.test(mom5$senso2Didentification,mom5$goutmetallique)
+table(k$senso2Dintensite,k$goutmetallique)
+t.test(senso2Dintensite~goutmetallique,data=k)
+t.test(senso2Dintensite~goutmetallique,data=mom2)
+t.test(senso2Dintensite~goutmetallique,data=mom3)
+t.test(senso2Dintensite~goutmetallique,data=mom4)
+t.test(senso2Dintensite~goutmetallique,data=mom5)
+
+#amer
+chisq.test(k$senso1Didentification,k$goutmetallique)
+chisq.test(mom2$senso1Didentification,mom2$goutmetallique)
+chisq.test(mom3$senso1Didentification,mom3$goutmetallique)
+chisq.test(mom4$senso1Didentification,mom4$goutmetallique)
+chisq.test(mom5$senso1Didentification,mom5$goutmetallique)
+table(k$senso1Dintensite,k$goutmetallique)
+t.test(senso1Dintensite~goutmetallique,data=k)
+t.test(senso1Dintensite~goutmetallique,data=mom2)
+t.test(senso1Dintensite~goutmetallique,data=mom3)
+t.test(senso1Dintensite~goutmetallique,data=mom4)
+t.test(senso1Dintensite~goutmetallique,data=mom5)
+
+#acide
+chisq.test(k$senso5Didentification,k$goutmetallique)
+chisq.test(mom2$senso5Didentification,mom2$goutmetallique)
+chisq.test(mom3$senso5Didentification,mom3$goutmetallique)
+chisq.test(mom4$senso5Didentification,mom4$goutmetallique)
+chisq.test(mom5$senso5Didentification,mom5$goutmetallique)
+table(k$senso5Dintensite,k$goutmetallique)
+t.test(senso5Dintensite~goutmetallique,data=k)
+t.test(senso5Dintensite~goutmetallique,data=mom2)
+t.test(senso5Dintensite~goutmetallique,data=mom3)
+t.test(senso5Dintensite~goutmetallique,data=mom4)
+t.test(senso5Dintensite~goutmetallique,data=mom5)
+
+#sucré
+chisq.test(k$senso3Didentification,k$goutmetallique)
+chisq.test(mom2$senso3Didentification,mom2$goutmetallique)
+chisq.test(mom3$senso3Didentification,mom3$goutmetallique)
+chisq.test(mom4$senso3Didentification,mom4$goutmetallique)
+chisq.test(mom5$senso3Didentification,mom5$goutmetallique)
+table(k$senso1Aintensite,k$goutmetallique)
+t.test(senso3Dintensite~goutmetallique,data=k)
+t.test(senso3Dintensite~goutmetallique,data=mom2)
+t.test(senso3Dintensite~goutmetallique,data=mom3)
+t.test(senso3Dintensite~goutmetallique,data=mom4)
+t.test(senso3Dintensite~goutmetallique,data=mom5)
+.
+#métallique
+chisq.test(k$senso4Didentification,k$goutmetallique)
+chisq.test(mom2$senso4Didentification,mom2$goutmetallique)
+chisq.test(mom3$senso4Didentification,mom3$goutmetallique)
+chisq.test(mom4$senso4Didentification,mom4$goutmetallique)
+chisq.test(mom5$senso4Didentification,mom5$goutmetallique)
+table(k$senso4Dintensite,k$goutmetallique)
+t.test(senso4Dintensite~goutmetallique,data=k)
+t.test(senso4Dintensite~goutmetallique,data=mom2)
+t.test(senso4Dintensite~goutmetallique,data=mom3)
+t.test(senso4Dintensite~goutmetallique,data=mom4)
+t.test(senso4Dintensite~goutmetallique,data=mom5)
+
+#MT et débit salivaire
+boxplot(salive~goutmetallique, data=k)
+t.test(salive~goutmetallique, data=k)
+
+#mucite et MT
+table(k$mucite,k$goutmetallique)
+chisq.test(k$mucite,k$goutmetallique)
+
+#mucite01 et MT
+table(k$mucite01,k$goutmetallique)
+chisq.test(k$mucite01,k$goutmetallique)
+
+#candidose et MT
+table(k$candidose ,k$goutmetallique)
+chisq.test(k$candidose ,k$goutmetallique)
+
+#candidose01 et MT
+table(k$candidose01,k$goutmetallique)
+chisq.test(k$candidose01,k$goutmetallique)
+
+####################
+#Evolution de l'eau#
+####################
+
+#Point A
+#eau sur un même graphique
+interaction.plot(k$Moment,k$nom,k$senso1Aintensite, xlab="Moment", ylab="point A", legend=F,ylim=c(0,5))
+p1<-ggplot(k,aes(x=Moment,y=senso1Aintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+
+#Point B
+p2<-ggplot(k,aes(x=Moment,y=senso2Bintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+
+#Point C
+p3<-ggplot(k,aes(x=Moment,y=senso6Cintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("C")
+
+(p1+p2)/p3
+
+
+######
+#salé#
+######
+p4<-ggplot(k,aes(x=Moment,y=senso2Aintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+
+#Point B
+p5<-ggplot(k,aes(x=Moment,y=senso3Bintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+
+#Point C
+p6<-ggplot(k,aes(x=Moment,y=senso1Cintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("C")
+
+#Point D
+p7<-ggplot(k,aes(x=Moment,y=senso2Dintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("D")
+(p4+p5)/(p6+p7)
+
+######
+#amer#
+######
+p8<-ggplot(k,aes(x=Moment,y=senso3Aintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+
+#Point B
+p9<-ggplot(k,aes(x=Moment,y=senso4Bintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1,8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+
+#Point C
+p10<-ggplot(k,aes(x=Moment,y=senso5Cintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("C")
+
+#Point D
+p11<-ggplot(k,aes(x=Moment,y=senso1Dintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("D")
+(p8+p9)/(p10+p11)
+
+#######
+#acide#
+#######
+p12<-ggplot(k,aes(x=Moment,y=senso4Aintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+
+#Point B
+p13<-ggplot(k,aes(x=Moment,y=senso1Bintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+
+#Point C
+p14<-ggplot(k,aes(x=Moment,y=senso2Cintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("C")
+
+#Point D
+p15<-ggplot(k,aes(x=Moment,y=senso5Dintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("D")
+(p12+p13)/(p14+p15)
+
+#######
+#sucré#
+#######
+
+p16<-ggplot(k,aes(x=Moment,y=senso5Aintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+
+#Point B
+p17<-ggplot(k,aes(x=Moment,y=senso6Bintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+
+#Point C
+p18<-ggplot(k,aes(x=Moment,y=senso4Cintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("C")
+
+#Point D
+p19<-ggplot(k,aes(x=Moment,y=senso3Dintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("D")
+(p16+p17)/(p18+p19)
+
+#######
+#métal#
+#######
+p20<-ggplot(k,aes(x=Moment,y=senso6Aintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("A")
+
+#Point B
+p21<-ggplot(k,aes(x=Moment,y=senso5Bintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+
+#Point C
+p22<-ggplot(k,aes(x=Moment,y=senso3Cintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("C")
+
+#Point D
+p23<-ggplot(k,aes(x=Moment,y=senso4Dintensite,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("D")
+(p20+p21)/(p22+p23)
+
+
+######################
+#comparaison ant-post#
+######################
+
+#amer
+k$sensoamerpost<-k$senso3Aintensite + k$senso4Bintensite
+mean(k$sensoamerpost,na.rm=T)
+sd(k$sensoamerpost,na.rm=T)
+k$sensoamerant<-k$senso5Cintensite + k$senso1Dintensite
+mean(k$sensoamerant,na.rm=T)
+sd(k$sensoamerant,na.rm=T)
+t.test(k$sensoamerpost,k$sensoamerant,paired=T)
+
+#Salé
+k$sensosalepost<-k$senso2Aintensite + k$senso3Bintensite
+mean(k$sensosalepost,na.rm=T)
+sd(k$sensosalepost,na.rm=T)
+k$sensosaleant<-k$senso1Cintensite + k$senso2Dintensite
+mean(k$sensosaleant,na.rm=T)
+sd(k$sensosaleant,na.rm=T)
+t.test(k$sensosalepost,k$sensosaleant,paired=T)
+
+
+#acide
+k$sensoacidepost<-k$senso4Aintensite + k$senso1Bintensite
+mean(k$sensoacidepost,na.rm=T)
+sd(k$sensoacidepost,na.rm=T)
+k$sensoacideant<-k$senso2Cintensite + k$senso5Dintensite
+mean(k$sensoacideant,na.rm=T)
+sd(k$sensoacideant,na.rm=T)
+t.test(k$sensoacidepost,k$sensoacideant,paired=T)
+
+
+#sucré
+k$sensosucrepost<-k$senso5Aintensite + k$senso6Bintensite
+mean(k$sensosucrepost,na.rm=T)
+sd(k$sensosucrepost,na.rm=T)
+k$sensosucreant<-k$senso4Cintensite + k$senso3Dintensite
+mean(k$sensosucreant,na.rm=T)
+sd(k$sensosucreant,na.rm=T)
+t.test(k$sensosucrepost,k$sensosucreant,paired=T)
+
+##########################################
+#Comparaison selon statut gout métallique#
+##########################################
+
+#amer
+k$sensoamerdiff<-k$sensoamerpost-k$sensoamerant
+k$sensosalediff<-k$sensosalepost-k$sensosaleant
+k$sensoacidediff<-k$sensoacidepost-k$sensoacideant
+k$sensosucrediff<-sensosucrediff<-k$sensosucrepost-k$sensosucreant
+metal<-subset(k,k$goutmetallique==1)
+nonmetal<-subset(k,k$goutmetallique==0)
+
+
+
+
+#tests
+mean(metal$sensoamerdiff,na.rm=T)
+sd(metal$sensoamerdiff,na.rm=T)
+mean(nonmetal$sensoamerdiff,na.rm=T)
+sd(nonmetal$sensoamerdiff,na.rm=T)
+t.test(metal$sensoamerdiff,nonmetal$sensoamerdiff)
+
+mean(metal$sensosalediff,na.rm=T)
+sd(metal$sensosalediff,na.rm=T)
+mean(nonmetal$sensosalediff,na.rm=T)
+sd(nonmetal$sensosalediff,na.rm=T)
+t.test(metal$sensosalediff,nonmetal$sensosalediff)
+
+mean(metal$sensoacidediff,na.rm=T)
+sd(metal$sensoacidediff,na.rm=T)
+mean(nonmetal$sensoacidediff,na.rm=T)
+sd(nonmetal$sensoacidediff,na.rm=T)
+t.test(metal$sensoacidediff,nonmetal$sensoacidediff)
+
+mean(metal$sensosucrediff,na.rm=T)
+sd(metal$sensosucrediff,na.rm=T)
+mean(nonmetal$sensosucrediff,na.rm=T)
+sd(nonmetal$sensosucrediff,na.rm=T)
+t.test(metal$sensosucrediff,nonmetal$sensosucrediff)
+

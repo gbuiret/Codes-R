@@ -1,0 +1,1583 @@
+k<-read.csv2 ("D:/science/thèse/étude/data.csv")
+k1<-read.csv2 ("D:/science/thèse/articles/2024 analyse de la salive/données répétées.csv")
+
+library(prettyR) 
+library(nlme)
+library(gplots) 
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+library(lme4)
+library(lmerTest)
+
+k$catalasemg<-k$catalase/k$prot
+k$SODmg<-k$SOD/k$prot
+k$GSTP1mg<-k$GSTP1/k$prot
+k$MDAmin<-k$MDA*k$salive/1000 
+k$protmin<-k$prot*k$salive
+k$ORACmin<-k$ORAC*k$salive/1000
+k$catalasemin<-k$catalase*k$salive
+k$SODmin<-k$SOD*k$salive
+k$GSTP1min<-k$GSTP1*k$salive
+
+mean_ci_95 <- function(x) {
+  n <- length(x)
+  mean <- mean(x)
+  se <- sd(x) / sqrt(n)
+  ci <- qt(0.975, df = n - 1) * se  # Calcul de l'IC à 95%
+  data.frame(y = mean, ymin = mean - ci, ymax = mean + ci)
+}
+
+
+metal<-subset(k,k$goutmetallique==1)
+nonmetal<-subset(k,k$goutmetallique==0)
+mom1<-subset(k,k$Moment==1)
+mom2<-subset(k,k$Moment==2)
+mom3<-subset(k,k$Moment==3)
+mom4<-subset(k,k$Moment==4)
+mom5<-subset(k,k$Moment==5)
+mom8<-subset(k,k$Moment==8)
+mom1rep<-subset(k1,k1$Moment==1)
+mom2rep<-subset(k1,k1$Moment==2)
+mom3rep<-subset(k1,k1$Moment==3)
+mom4rep<-subset(k1,k1$Moment==4)
+mom5rep<-subset(k1,k1$Moment==5)
+mom8rep<-subset(k1,k1$Moment==8)
+mom1metal<-subset(metal,metal$Moment==1)
+mom2metal<-subset(metal,metal$Moment==2)
+mom3metal<-subset(metal,metal$Moment==3)
+mom4metal<-subset(metal,metal$Moment==4)
+mom5metal<-subset(metal,metal$Moment==5)
+mom1nonmetal<-subset(nonmetal,nonmetal$Moment==1)
+mom2nonmetal<-subset(nonmetal,nonmetal$Moment==2)
+mom3nonmetal<-subset(nonmetal,nonmetal$Moment==3)
+mom4nonmetal<-subset(nonmetal,nonmetal$Moment==4)
+mom5nonmetal<-subset(nonmetal,nonmetal$Moment==5)
+
+table(k$Moment,k$goutmetallique)
+
+
+#############
+#description#
+#############
+
+describe(k$MDA)#µmol/l
+describe(metal$MDA)
+describe(nonmetal$MDA)
+
+describe(k$MDAmin) #µmol/min
+describe(metal$MDAmin)
+describe(nonmetal$MDAmin)
+
+describe(k$prot) #mg/ml
+describe(metal$prot)
+describe(nonmetal$prot)
+
+describe(k$protmin)#mg/min
+describe(metal$protmin)
+describe(nonmetal$protmin)
+
+describe(k$ORAC) µmol/l
+describe(metal$ORAC)
+describe(nonmetal$ORAC)
+
+describe(k$ORACmin) #µmol/min
+describe(metal$ORACmin)
+describe(nonmetal$ORACmin)
+
+describe(k$catalase) #UI/ml
+describe(metal$catalase)
+describe(nonmetal$catalase)
+
+describe(k$catalasemg) #mg/ml
+describe(metal$catalasemg)
+describe(nonmetal$catalasemg)
+
+describe(k$catalasemin) #UI/min
+describe(metal$catalasemin)
+describe(nonmetal$catalasemin)
+
+describe(k$SOD) #UI/ml
+describe(metal$SOD)
+describe(nonmetal$SOD)
+
+describe(k$SODmg) #mg/ml
+describe(metal$SODmg)
+describe(nonmetal$SODmg)
+
+describe(k$SODmin) #UI/min
+describe(metal$SODmin)
+describe(nonmetal$SODmin)
+
+describe(k$GSTP1) #UI/ml
+describe(metal$GSTP1)
+describe(nonmetal$GSTP1)
+
+describe(k$GSTP1mg)#mg/ml
+describe(metal$GSTP1mg)
+describe(nonmetal$GSTP1mg)
+
+describe(k$GSTP1min) #UI/min
+describe(metal$GSTP1mg)
+describe(nonmetal$GSTP1mg)
+
+##################
+#evolution du MDA#
+##################
+
+pa<-ggplot(k,aes(x=Moment,y=MDA)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,0.5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("Salivary MDA (µmol/l)")
+pa
+pb<-ggplot(k,aes(x=Moment,y=MDA,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 0.5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("Salivary MDA (µmol/l)")
+pb
+pa+pb
+
+describe(mom1metal$MDA)
+describe(mom1nonmetal$MDA)
+wilcox.test(MDA~goutmetallique,mom1)
+describe(mom2metal$MDA)
+describe(mom2nonmetal$MDA)
+wilcox.test(MDA~goutmetallique,mom2)
+describe(mom3metal$MDA)
+describe(mom3nonmetal$MDA)
+wilcox.test(MDA~goutmetallique,mom3)
+describe(mom4metal$MDA)
+describe(mom4nonmetal$MDA)
+wilcox.test(MDA~goutmetallique,mom4)
+describe(mom5metal$MDA)
+describe(mom5nonmetal$MDA)
+wilcox.test(MDA~goutmetallique,mom5)
+
+
+# Effectuer le test t apparié
+t.test(mom1rep$MDA, mom3rep$MDA, paired = TRUE)
+t.test(mom1rep$MDA, mom4rep$MDA, paired = TRUE)
+t.test(mom1rep$MDA, mom5rep$MDA, paired = TRUE)
+#comparaison M1 et M8
+ t.test(mom1$MDA, mom8$MDA)
+
+###########################
+#evolution du débit de MDA#
+###########################
+
+pater<-ggplot(k,aes(x=Moment,y=MDAmin)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,0.001250)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pater
+pbter<-ggplot(k,aes(x=Moment,y=MDAmin,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 0.00125)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pbter
+pater+pbter
+
+#########################
+#evolution des protéines#
+#########################
+
+pc<-ggplot(k,aes(x=Moment,y=prot)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,3)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pc
+pd<-ggplot(k,aes(x=Moment,y=prot,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 3)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pd
+pc+pd
+
+describe(mom1metal$prot)
+describe(mom1nonmetal$prot)
+t.test(prot~goutmetallique,mom1)
+describe(mom2metal$prot)
+describe(mom2nonmetal$prot)
+t.test(prot~goutmetallique,mom2)
+describe(mom3metal$prot)
+describe(mom3nonmetal$prot)
+t.test(prot~goutmetallique,mom3)
+describe(mom4metal$prot)
+describe(mom4nonmetal$prot)
+t.test(prot~goutmetallique,mom4)
+describe(mom5metal$prot)
+describe(mom5nonmetal$prot)
+t.test(prot~goutmetallique,mom5)
+
+##################################
+#evolution du débit des protéines#
+##################################
+
+pcter<-ggplot(k,aes(x=Moment,y=protmin)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,7)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pcter
+pdter<-ggplot(k,aes(x=Moment,y=protmin,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 7)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pdter
+pcter+pdter
+
+###################
+#evolution de ORAC#
+###################
+
+pe<-ggplot(k,aes(x=Moment,y=ORAC)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,7500)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pe
+pf<-ggplot(k,aes(x=Moment,y=ORAC,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 7500)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pf
+pe+pf
+
+describe(mom1metal$ORAC)
+describe(mom1nonmetal$ORAC)
+t.test(ORAC~goutmetallique,mom1)
+describe(mom2metal$ORAC)
+describe(mom2nonmetal$ORAC)
+t.test(ORAC~goutmetallique,mom2)
+describe(mom3metal$ORAC)
+describe(mom3nonmetal$ORAC)
+t.test(ORAC~goutmetallique,mom3)
+describe(mom4metal$ORAC)
+describe(mom4nonmetal$ORAC)
+t.test(ORAC~goutmetallique,mom4)
+describe(mom5metal$ORAC)
+describe(mom5nonmetal$ORAC)
+t.test(ORAC~goutmetallique,mom5)
+
+############################
+#evolution du débit de ORAC#
+############################
+
+peter<-ggplot(k,aes(x=Moment,y=ORACmin)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,50)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+peter
+pfter<-ggplot(k,aes(x=Moment,y=ORACmin,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 50)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pfter
+peter+pfter
+
+#######################
+#evolution de catalase#
+#######################
+
+pg<-ggplot(k,aes(x=Moment,y=catalase)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,500)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pg
+ph<-ggplot(k,aes(x=Moment,y=catalase,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 500)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+ph
+pg+ph
+
+describe(mom1metal$catalase)
+describe(mom1nonmetal$catalase)
+t.test(catalase~goutmetallique,mom1)
+describe(mom2metal$catalase)
+describe(mom2nonmetal$catalase)
+t.test(catalase~goutmetallique,mom2)
+describe(mom3metal$catalase)
+describe(mom3nonmetal$catalase)
+t.test(catalase~goutmetallique,mom3)
+describe(mom4metal$catalase)
+describe(mom4nonmetal$catalase)
+t.test(catalase~goutmetallique,mom4)
+describe(mom5metal$catalase)
+describe(mom5nonmetal$catalase)
+t.test(catalase~goutmetallique,mom5)
+
+#############################
+#evolution de catalase mg/ml#
+#############################
+
+pgbis<-ggplot(k,aes(x=Moment,y=catalasemg)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,1000)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pgbis
+phbis<-ggplot(k,aes(x=Moment,y=catalasemg,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 1000)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+phbis
+pgbis+phbis
+
+
+describe(mom2metal$catalasemg)
+describe(mom2nonmetal$catalasemg)
+t.test(catalasemg~goutmetallique,mom2)
+describe(mom3metal$catalasemg)
+describe(mom3nonmetal$catalasemg)
+t.test(catalasemg~goutmetallique,mom3)
+describe(mom4metal$catalasemg)
+describe(mom4nonmetal$catalasemg)
+t.test(catalasemg~goutmetallique,mom4)
+describe(mom5metal$catalasemg)
+describe(mom5nonmetal$catalasemg)
+t.test(catalasemg~goutmetallique,mom5)
+
+################################
+#evolution du débit de catalase#
+################################
+
+pgter<-ggplot(k,aes(x=Moment,y=catalasemin)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,2000)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pgter
+phter<-ggplot(k,aes(x=Moment,y=catalasemin,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 2000)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+phter
+pgter+phter
+
+###################
+#evolution de SOD#
+###################
+
+pi<-ggplot(k,aes(x=Moment,y=SOD)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,50)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pi
+pj<-ggplot(k,aes(x=Moment,y=SOD,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 50)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pj
+pi+pj
+
+(pc+pd)/(pe+pf)/(pg+ph)/(pi+pj)
+
+describe(mom2metal$SOD)
+describe(mom2nonmetal$SOD)
+t.test(SOD~goutmetallique,mom2)
+describe(mom3metal$SOD)
+describe(mom3nonmetal$SOD)
+t.test(SOD~goutmetallique,mom3)
+describe(mom4metal$SOD)
+describe(mom4nonmetal$SOD)
+t.test(SOD~goutmetallique,mom4)
+describe(mom5metal$SOD)
+describe(mom5nonmetal$SOD)
+t.test(SOD~goutmetallique,mom5)
+
+########################
+#evolution de SOD mg/ml#
+########################
+
+pibis<-ggplot(k,aes(x=Moment,y=SODmg)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pibis
+pjbis<-ggplot(k,aes(x=Moment,y=SODmg,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pjbis
+pibis+pjbis
+
+describe(mom2metal$SODmg)
+describe(mom2nonmetal$SODmg)
+t.test(SODmg~goutmetallique,mom2)
+describe(mom3metal$SODmg)
+describe(mom3nonmetal$SODmg)
+t.test(SODmg~goutmetallique,mom3)
+describe(mom4metal$SODmg)
+describe(mom4nonmetal$SODmg)
+t.test(SODmg~goutmetallique,mom4)
+describe(mom5metal$SODmg)
+describe(mom5nonmetal$SODmg)
+t.test(SODmg~goutmetallique,mom5)
+
+#################################
+#evolution du débit de SOD mg/ml#
+#################################
+
+piter<-ggplot(k,aes(x=Moment,y=SODmin)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,50)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+piter
+pjter<-ggplot(k,aes(x=Moment,y=SODmin,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,50)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pjter
+piter+pjter
+
+###################
+#evolution de GSTP1#
+###################
+
+pk<-ggplot(k,aes(x=Moment,y=GSTP1)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pk
+pl<-ggplot(k,aes(x=Moment,y=GSTP1,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 100)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+pl
+pk+pl
+(pc+pd)/(pe+pf)/(pg+ph)/(pi+pj)/(pk+pl)
+
+describe(mom2metal$GSTP1)
+describe(mom2nonmetal$GSTP1)
+t.test(GSTP1~goutmetallique,mom2)
+describe(mom3metal$GSTP1)
+describe(mom3nonmetal$GSTP1)
+t.test(GSTP1~goutmetallique,mom3)
+describe(mom4metal$GSTP1)
+describe(mom4nonmetal$GSTP1)
+t.test(GSTP1~goutmetallique,mom4)
+describe(mom5metal$GSTP1)
+describe(mom5nonmetal$GSTP1)
+t.test(GSTP1~goutmetallique,mom5)
+
+##########################
+#evolution de GSTP1 mg/ml#
+##########################
+
+pkbis<-ggplot(k,aes(x=Moment,y=GSTP1mg)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,1000)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pkbis
+plbis<-ggplot(k,aes(x=Moment,y=GSTP1mg,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 1000)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+plbis
+pkbis+plbis
+describe(mom2metal$GSTP1mg)
+describe(mom2nonmetal$GSTP1mg)
+t.test(GSTP1mg~goutmetallique,mom2)
+describe(mom3metal$GSTP1mg)
+describe(mom3nonmetal$GSTP1mg)
+t.test(GSTP1mg~goutmetallique,mom3)
+describe(mom4metal$GSTP1mg)
+describe(mom4nonmetal$GSTP1mg)
+t.test(GSTP1mg~goutmetallique,mom4)
+describe(mom5metal$GSTP1mg)
+describe(mom5nonmetal$GSTP1mg)
+t.test(GSTP1mg~goutmetallique,mom5)
+
+#############################
+#evolution du débit de GSTP1#
+#############################
+
+pkter<-ggplot(k,aes(x=Moment,y=GSTP1min)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,250)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("A")
+pkter
+plter<-ggplot(k,aes(x=Moment,y=GSTP1min,group=goutmetallique,col=goutmetallique)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_ci_95, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0, 250)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  guides(colour = "none") + # Supprime la légende des couleurs
+  ggtitle("B")
+plter
+pkter+plter
+
+#####################
+#Atténuation par BdB#
+#####################
+
+table(metal$goutmetallattenuationcomplete)
+table(metal$Moment,metal$goutmetallattenuationcomplete)
+attenuationcomplete<-c(0,0,2,0,1)
+table(metal$goutmetallattenuationpartielle)
+table(metal$Moment,metal$goutmetallattenuationpartielle)
+attenuationpartielle<-c(0,3,4,2,0)
+table(metal$goutmetallpasattenuation)
+table(metal$Moment,metal$goutmetallpasattenuation)
+pasattenuation<-c(2,1,2,2,0)
+
+observations <- c(pasattenuation, attenuationpartielle, attenuationcomplete)
+contingency_table <- matrix(observations, nrow=1)
+chisq.test(contingency_table,correct=TRUE)
+
+# Étape 5 : Afficher les résultats du test du chi-carré
+print(chi2_test)
+
+pa<-ggplot(metal,aes(x=Moment,y=goutmetallattenuationcomplete)) +
+  stat_summary(fun = mean, geom = "point", shape = 18, size = 3) +  # Ajout des moyennes
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  coord_cartesian(xlim = c(1,8), ylim = c(0,5)) +
+  scale_x_continuous(breaks = seq(1, 8, 1)) + # Modifie l'échelle des abscisses
+  theme(axis.title.y = element_blank()) + 
+  ggtitle("MT intensity")
+pa
+
+
+##################################################################
+#analyse de l'impact des réponses aux tests sensoriels sur le MDA#
+##################################################################
+
+######
+#salé#
+######
+
+modelidentsaleA <- lmer(MDA ~ Moment + senso2Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleA)
+modelintsaleA <- lmer(MDA ~ Moment + senso2Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleA)
+
+modelidentsaleB <- lmer(MDA ~ Moment + senso3Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleB)
+modelintsaleB <- lmer(MDA ~ Moment + senso3Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleB)
+
+modelidentsaleC <- lmer(MDA ~ Moment + senso1Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleC)
+modelintsaleC <- lmer(MDA ~ Moment + senso1Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleC)
+
+modelidentsaleD <- lmer(MDA ~ Moment + senso2Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleD)
+modelintsaleD <- lmer(MDA ~ Moment + senso2Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleD)
+
+######
+#amer#
+######
+
+modelidentamerA <- lmer(MDA ~ Moment + senso3Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerA)
+modelintamerA <- lmer(MDA ~ Moment + senso3Aintensite + (1 + Moment | nom), data = k)
+summary(modelintamerA)
+
+modelidentamerB <- lmer(MDA ~ Moment + senso4Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerB)
+modelintamerB <- lmer(MDA ~ Moment + senso4Bintensite + (1 + Moment | nom), data = k)
+summary(modelintamerB)
+
+modelidentamerC <- lmer(MDA ~ Moment + senso5Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerC)
+modelintamerC <- lmer(MDA ~ Moment + senso5Cintensite + (1 + Moment | nom), data = k)
+summary(modelintamerC)
+
+modelidentamerD <- lmer(MDA ~ Moment + senso1Didentification + (1 + Moment | nom), data = k)
+summary(modelidentamerD)
+modelintamerD <- lmer(MDA ~ Moment + senso1Dintensite + (1 + Moment | nom), data = k)
+summary(modelintamerD)
+
+#######
+#acide#
+#######
+
+modelidentacideA <- lmer(MDA ~ Moment + senso4Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideA)
+modelintacideA <- lmer(MDA ~ Moment + senso4Aintensite + (1 + Moment | nom), data = k)
+summary(modelintacideA)
+
+modelidentacideB <- lmer(MDA ~ Moment + senso1Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideB)
+modelintacideB <- lmer(MDA ~ Moment + senso1Bintensite + (1 + Moment | nom), data = k)
+summary(modelintacideB)
+
+modelidentacideC <- lmer(MDA ~ Moment + senso2Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideC)
+modelintacideC <- lmer(MDA ~ Moment + senso2Cintensite + (1 + Moment | nom), data = k)
+summary(modelintacideC)
+
+modelidentacideD <- lmer(MDA ~ Moment + senso5Didentification + (1 + Moment | nom), data = k)
+summary(modelidentacideD)
+modelintacideD <- lmer(MDA ~ Moment + senso5Dintensite + (1 + Moment | nom), data = k)
+summary(modelintacideD)
+
+#######
+#sucré#
+#######
+
+modelidentsucreA <- lmer(MDA ~ Moment + senso5Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreA)
+modelintsucreA <- lmer(MDA ~ Moment + senso5Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreA)
+
+modelidentsucreB <- lmer(MDA ~ Moment + senso6Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreB)
+modelintsucreB <- lmer(MDA ~ Moment + senso6Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreB)
+
+modelidentsucreC <- lmer(MDA ~ Moment + senso4Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreC)
+modelintsucreC <- lmer(MDA ~ Moment + senso4Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreC)
+
+modelidentsucreD <- lmer(MDA ~ Moment + senso3Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreD)
+modelintsucreD <- lmer(MDA ~ Moment + senso3Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreD)
+
+#########################################################################
+#analyse de l'impact des réponses aux tests sensoriels sur les protéines#
+#########################################################################
+
+######
+#salé#
+######
+
+modelidentsaleA <- lmer(prot ~ Moment + senso2Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleA)
+modelintsaleA <- lmer(prot ~ Moment + senso2Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleA)
+
+modelidentsaleB <- lmer(prot ~ Moment + senso3Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleB)
+modelintsaleB <- lmer(prot ~ Moment + senso3Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleB)
+
+modelidentsaleC <- lmer(prot ~ Moment + senso1Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleC)
+modelintsaleC <- lmer(prot ~ Moment + senso1Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleC)
+
+modelidentsaleD <- lmer(prot ~ Moment + senso2Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleD)
+modelintsaleD <- lmer(prot ~ Moment + senso2Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleD)
+
+######
+#amer#
+######
+
+modelidentamerA <- lmer(prot ~ Moment + senso3Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerA)
+modelintamerA <- lmer(prot ~ Moment + senso3Aintensite + (1 + Moment | nom), data = k)
+summary(modelintamerA)
+
+modelidentamerB <- lmer(prot ~ Moment + senso4Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerB)
+modelintamerB <- lmer(prot ~ Moment + senso4Bintensite + (1 + Moment | nom), data = k)
+summary(modelintamerB)
+
+modelidentamerC <- lmer(prot ~ Moment + senso5Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerC)
+modelintamerC <- lmer(prot ~ Moment + senso5Cintensite + (1 + Moment | nom), data = k)
+summary(modelintamerC)
+
+modelidentamerD <- lmer(prot ~ Moment + senso1Didentification + (1 + Moment | nom), data = k)
+summary(modelidentamerD)
+modelintamerD <- lmer(prot ~ Moment + senso1Dintensite + (1 + Moment | nom), data = k)
+summary(modelintamerD)
+
+#######
+#acide#
+#######
+
+modelidentacideA <- lmer(prot ~ Moment + senso4Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideA)
+modelintacideA <- lmer(prot ~ Moment + senso4Aintensite + (1 + Moment | nom), data = k)
+summary(modelintacideA)
+
+modelidentacideB <- lmer(prot ~ Moment + senso1Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideB)
+modelintacideB <- lmer(prot ~ Moment + senso1Bintensite + (1 + Moment | nom), data = k)
+summary(modelintacideB)
+
+modelidentacideC <- lmer(prot ~ Moment + senso2Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideC)
+modelintacideC <- lmer(prot ~ Moment + senso2Cintensite + (1 + Moment | nom), data = k)
+summary(modelintacideC)
+
+modelidentacideD <- lmer(prot ~ Moment + senso5Didentification + (1 + Moment | nom), data = k)
+summary(modelidentacideD)
+modelintacideD <- lmer(prot ~ Moment + senso5Dintensite + (1 + Moment | nom), data = k)
+summary(modelintacideD)
+
+#######
+#sucré#
+#######
+
+modelidentsucreA <- lmer(prot ~ Moment + senso5Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreA)
+modelintsucreA <- lmer(prot ~ Moment + senso5Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreA)
+
+modelidentsucreB <- lmer(prot ~ Moment + senso6Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreB)
+modelintsucreB <- lmer(prot ~ Moment + senso6Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreB)
+
+modelidentsucreC <- lmer(prot ~ Moment + senso4Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreC)
+modelintsucreC <- lmer(prot ~ Moment + senso4Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreC)
+
+modelidentsucreD <- lmer(prot ~ Moment + senso3Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreD)
+modelintsucreD <- lmer(prot ~ Moment + senso3Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreD)
+
+################################################################
+#analyse de l'impact des réponses aux tests sensoriels sur ORAC#
+################################################################
+
+######
+#salé#
+######
+
+modelidentsaleA <- lmer(ORAC ~ Moment + senso2Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleA)
+modelintsaleA <- lmer(ORAC ~ Moment + senso2Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleA)
+
+modelidentsaleB <- lmer(ORAC ~ Moment + senso3Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleB)
+modelintsaleB <- lmer(ORAC ~ Moment + senso3Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleB)
+
+modelidentsaleC <- lmer(ORAC ~ Moment + senso1Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleC)
+modelintsaleC <- lmer(ORAC ~ Moment + senso1Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleC)
+
+modelidentsaleD <- lmer(ORAC ~ Moment + senso2Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleD)
+modelintsaleD <- lmer(ORAC ~ Moment + senso2Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleD)
+
+######
+#amer#
+######
+
+modelidentamerA <- lmer(ORAC ~ Moment + senso3Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerA)
+modelintamerA <- lmer(ORAC ~ Moment + senso3Aintensite + (1 + Moment | nom), data = k)
+summary(modelintamerA)
+
+modelidentamerB <- lmer(ORAC ~ Moment + senso4Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerB)
+modelintamerB <- lmer(ORAC ~ Moment + senso4Bintensite + (1 + Moment | nom), data = k)
+summary(modelintamerB)
+
+modelidentamerC <- lmer(ORAC ~ Moment + senso5Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerC)
+modelintamerC <- lmer(ORAC ~ Moment + senso5Cintensite + (1 + Moment | nom), data = k)
+summary(modelintamerC)
+
+modelidentamerD <- lmer(ORAC ~ Moment + senso1Didentification + (1 + Moment | nom), data = k)
+summary(modelidentamerD)
+modelintamerD <- lmer(ORAC ~ Moment + senso1Dintensite + (1 + Moment | nom), data = k)
+summary(modelintamerD)
+
+#######
+#acide#
+#######
+
+modelidentacideA <- lmer(ORAC ~ Moment + senso4Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideA)
+modelintacideA <- lmer(ORAC ~ Moment + senso4Aintensite + (1 + Moment | nom), data = k)
+summary(modelintacideA)
+
+modelidentacideB <- lmer(ORAC ~ Moment + senso1Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideB)
+modelintacideB <- lmer(ORAC ~ Moment + senso1Bintensite + (1 + Moment | nom), data = k)
+summary(modelintacideB)
+
+modelidentacideC <- lmer(ORAC ~ Moment + senso2Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideC)
+modelintacideC <- lmer(ORAC ~ Moment + senso2Cintensite + (1 + Moment | nom), data = k)
+summary(modelintacideC)
+
+modelidentacideD <- lmer(ORAC ~ Moment + senso5Didentification + (1 + Moment | nom), data = k)
+summary(modelidentacideD)
+modelintacideD <- lmer(ORAC ~ Moment + senso5Dintensite + (1 + Moment | nom), data = k)
+summary(modelintacideD)
+
+#######
+#sucré#
+#######
+
+modelidentsucreA <- lmer(ORAC ~ Moment + senso5Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreA)
+modelintsucreA <- lmer(ORAC ~ Moment + senso5Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreA)
+
+modelidentsucreB <- lmer(ORAC ~ Moment + senso6Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreB)
+modelintsucreB <- lmer(ORAC ~ Moment + senso6Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreB)
+
+modelidentsucreC <- lmer(ORAC ~ Moment + senso4Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreC)
+modelintsucreC <- lmer(ORAC ~ Moment + senso4Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreC)
+
+modelidentsucreD <- lmer(ORAC ~ Moment + senso3Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreD)
+modelintsucreD <- lmer(ORAC ~ Moment + senso3Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreD)
+
+#######################################################################
+#analyse de l'impact des réponses aux tests sensoriels sur la catalase#
+#######################################################################
+
+######
+#salé#
+######
+
+modelidentsaleA <- lmer(catalase ~ Moment + senso2Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleA)
+modelintsaleA <- lmer(catalase ~ Moment + senso2Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleA)
+
+modelidentsaleB <- lmer(catalase ~ Moment + senso3Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleB)
+modelintsaleB <- lmer(catalase ~ Moment + senso3Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleB)
+
+modelidentsaleC <- lmer(catalase ~ Moment + senso1Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleC)
+modelintsaleC <- lmer(catalase ~ Moment + senso1Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleC)
+
+modelidentsaleD <- lmer(catalase ~ Moment + senso2Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleD)
+modelintsaleD <- lmer(catalase ~ Moment + senso2Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleD)
+
+######
+#amer#
+######
+
+modelidentamerA <- lmer(catalase ~ Moment + senso3Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerA)
+modelintamerA <- lmer(catalase ~ Moment + senso3Aintensite + (1 + Moment | nom), data = k)
+summary(modelintamerA)
+
+modelidentamerB <- lmer(catalase ~ Moment + senso4Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerB)
+modelintamerB <- lmer(catalase ~ Moment + senso4Bintensite + (1 + Moment | nom), data = k)
+summary(modelintamerB)
+
+modelidentamerC <- lmer(catalase ~ Moment + senso5Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerC)
+modelintamerC <- lmer(catalase ~ Moment + senso5Cintensite + (1 + Moment | nom), data = k)
+summary(modelintamerC)
+
+modelidentamerD <- lmer(catalase ~ Moment + senso1Didentification + (1 + Moment | nom), data = k)
+summary(modelidentamerD)
+modelintamerD <- lmer(catalase ~ Moment + senso1Dintensite + (1 + Moment | nom), data = k)
+summary(modelintamerD)
+
+#######
+#acide#
+#######
+
+modelidentacideA <- lmer(catalase ~ Moment + senso4Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideA)
+modelintacideA <- lmer(catalase ~ Moment + senso4Aintensite + (1 + Moment | nom), data = k)
+summary(modelintacideA)
+
+modelidentacideB <- lmer(catalase ~ Moment + senso1Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideB)
+modelintacideB <- lmer(catalase ~ Moment + senso1Bintensite + (1 + Moment | nom), data = k)
+summary(modelintacideB)
+
+modelidentacideC <- lmer(catalase ~ Moment + senso2Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideC)
+modelintacideC <- lmer(catalase ~ Moment + senso2Cintensite + (1 + Moment | nom), data = k)
+summary(modelintacideC)
+
+modelidentacideD <- lmer(catalase ~ Moment + senso5Didentification + (1 + Moment | nom), data = k)
+summary(modelidentacideD)
+modelintacideD <- lmer(catalase ~ Moment + senso5Dintensite + (1 + Moment | nom), data = k)
+summary(modelintacideD)
+
+#######
+#sucré#
+#######
+
+modelidentsucreA <- lmer(catalase ~ Moment + senso5Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreA)
+modelintsucreA <- lmer(catalase ~ Moment + senso5Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreA)
+
+modelidentsucreB <- lmer(catalase ~ Moment + senso6Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreB)
+modelintsucreB <- lmer(catalase ~ Moment + senso6Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreB)
+
+modelidentsucreC <- lmer(catalase ~ Moment + senso4Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreC)
+modelintsucreC <- lmer(catalase ~ Moment + senso4Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreC)
+
+modelidentsucreD <- lmer(catalase ~ Moment + senso3Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreD)
+modelintsucreD <- lmer(catalase ~ Moment + senso3Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreD)
+
+##################################################################
+#analyse de l'impact des réponses aux tests sensoriels sur le SOD#
+##################################################################
+
+######
+#salé#
+######
+
+modelidentsaleA <- lmer(SOD ~ Moment + senso2Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleA)
+modelintsaleA <- lmer(SOD ~ Moment + senso2Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleA)
+
+modelidentsaleB <- lmer(SOD ~ Moment + senso3Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleB)
+modelintsaleB <- lmer(SOD ~ Moment + senso3Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleB)
+
+modelidentsaleC <- lmer(SOD ~ Moment + senso1Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleC)
+modelintsaleC <- lmer(SOD ~ Moment + senso1Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleC)
+
+modelidentsaleD <- lmer(SOD ~ Moment + senso2Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsaleD)
+modelintsaleD <- lmer(SOD ~ Moment + senso2Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsaleD)
+
+######
+#amer#
+######
+
+modelidentamerA <- lmer(SOD ~ Moment + senso3Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerA)
+modelintamerA <- lmer(SOD ~ Moment + senso3Aintensite + (1 + Moment | nom), data = k)
+summary(modelintamerA)
+
+modelidentamerB <- lmer(SOD ~ Moment + senso4Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerB)
+modelintamerB <- lmer(SOD ~ Moment + senso4Bintensite + (1 + Moment | nom), data = k)
+summary(modelintamerB)
+
+modelidentamerC <- lmer(SOD ~ Moment + senso5Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentamerC)
+modelintamerC <- lmer(SOD ~ Moment + senso5Cintensite + (1 + Moment | nom), data = k)
+summary(modelintamerC)
+
+modelidentamerD <- lmer(SOD ~ Moment + senso1Didentification + (1 + Moment | nom), data = k)
+summary(modelidentamerD)
+modelintamerD <- lmer(SOD ~ Moment + senso1Dintensite + (1 + Moment | nom), data = k)
+summary(modelintamerD)
+
+#######
+#acide#
+#######
+
+modelidentacideA <- lmer(SOD ~ Moment + senso4Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideA)
+modelintacideA <- lmer(SOD ~ Moment + senso4Aintensite + (1 + Moment | nom), data = k)
+summary(modelintacideA)
+
+modelidentacideB <- lmer(SOD ~ Moment + senso1Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideB)
+modelintacideB <- lmer(SOD ~ Moment + senso1Bintensite + (1 + Moment | nom), data = k)
+summary(modelintacideB)
+
+modelidentacideC <- lmer(SOD ~ Moment + senso2Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentacideC)
+modelintacideC <- lmer(SOD ~ Moment + senso2Cintensite + (1 + Moment | nom), data = k)
+summary(modelintacideC)
+
+modelidentacideD <- lmer(SOD ~ Moment + senso5Didentification + (1 + Moment | nom), data = k)
+summary(modelidentacideD)
+modelintacideD <- lmer(SOD ~ Moment + senso5Dintensite + (1 + Moment | nom), data = k)
+summary(modelintacideD)
+
+#######
+#sucré#
+#######
+
+modelidentsucreA <- lmer(SOD ~ Moment + senso5Aidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreA)
+modelintsucreA <- lmer(SOD ~ Moment + senso5Aintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreA)
+
+modelidentsucreB <- lmer(SOD ~ Moment + senso6Bidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreB)
+modelintsucreB <- lmer(SOD ~ Moment + senso6Bintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreB)
+
+modelidentsucreC <- lmer(SOD ~ Moment + senso4Cidentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreC)
+modelintsucreC <- lmer(SOD ~ Moment + senso4Cintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreC)
+
+modelidentsucreD <- lmer(SOD ~ Moment + senso3Didentification + (1 + Moment | nom), data = k)
+summary(modelidentsucreD)
+modelintsucreD <- lmer(SOD ~ Moment + senso3Dintensite + (1 + Moment | nom), data = k)
+summary(modelintsucreD)
+
+
+################
+#identification#
+################
+
+#salé
+
+#MDA
+modelMDAsaleidentifA <- glmer(senso2Aidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsaleidentifA)
+modelMDAsaleidentifB <- glmer(senso3Bidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsaleidentifB)
+modelMDAsaleidentifC <- glmer(senso1Cidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsaleidentifC)
+modelMDAsaleidentifD <- glmer(senso2Didentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsaleidentifD)
+
+#prot
+modelprotsaleidentifA <- glmer(senso2Aidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsaleidentifA)
+modelprotsaleidentifB <- glmer(senso3Bidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsaleidentifB)
+modelprotsaleidentifC <- glmer(senso1Cidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsaleidentifC)
+modelprotsaleidentifD <- glmer(senso2Didentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsaleidentifD)
+
+#ORAC
+modelORACsaleidentifA <- glmer(senso2Aidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsaleidentifA)
+modelORACsaleidentifB <- glmer(senso3Bidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsaleidentifB)
+modelORACsaleidentifC <- glmer(senso1Cidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsaleidentifC)
+modelORACsaleidentifD <- glmer(senso2Didentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsaleidentifD)
+
+#catalase
+modelcatalasesaleidentifA <- glmer(senso2Aidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesaleidentifA)
+modelcatalasesaleidentifB <- glmer(senso3Bidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesaleidentifB)
+modelcatalasesaleidentifC <- glmer(senso1Cidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesaleidentifC)
+modelcatalasesaleidentifD <- glmer(senso2Didentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesaleidentifD)
+
+#SOD
+modelSODsaleidentifA <- glmer(senso2Aidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsaleidentifA)
+modelSODsaleidentifB <- glmer(senso3Bidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsaleidentifB)
+modelSODsaleidentifC <- glmer(senso1Cidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsaleidentifC)
+modelSODsaleidentifD <- glmer(senso2Didentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsaleidentifD)
+
+######
+#amer#
+######
+#MDA
+modelMDAameridentifA <- glmer(senso3Aidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAameridentifA)
+modelMDAameridentifB <- glmer(senso4Bidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAameridentifB)
+modelMDAameridentifC <- glmer(senso5Cidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAameridentifC)
+modelMDAameridentifD <- glmer(senso1Didentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAameridentifD)
+
+#prot
+modelprotameridentifA <- glmer(senso3Aidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotameridentifA)
+modelprotameridentifB <- glmer(senso4Bidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotameridentifB)
+modelprotameridentifC <- glmer(senso5Cidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotameridentifC)
+modelprotameridentifD <- glmer(senso1Didentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotameridentifD)
+
+#ORAC
+modelORACameridentifA <- glmer(senso3Aidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACameridentifA)
+modelORACameridentifB <- glmer(senso4Bidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACameridentifB)
+modelORACameridentifC <- glmer(senso5Cidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACameridentifC)
+modelORACameridentifD <- glmer(senso1Didentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACameridentifD)
+
+#catalase
+modelcatalaseameridentifA <- glmer(senso2Aidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseameridentifA)
+modelcatalaseameridentifB <- glmer(senso3Bidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseameridentifB)
+modelcatalaseameridentifC <- glmer(senso1Cidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseameridentifC)
+modelcatalaseameridentifD <- glmer(senso2Didentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseameridentifD)
+
+#SOD
+modelSODameridentifA <- glmer(senso3Aidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODameridentifA)
+modelSODameridentifB <- glmer(senso4Bidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODameridentifB)
+modelSODameridentifC <- glmer(senso5Cidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODameridentifC)
+modelSODameridentifD <- glmer(senso1Didentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODameridentifD)
+
+#######
+#acide#
+#######
+
+#MDA
+modelMDAacideidentifA <- glmer(senso4Aidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAacideidentifA)
+modelMDAacideidentifB <- glmer(senso1Bidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAacideidentifB)
+modelMDAacideidentifC <- glmer(senso2Cidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAacideidentifC)
+modelMDAacideidentifD <- glmer(senso5Didentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAacideidentifD)
+
+#prot
+modelprotacideidentifA <- glmer(senso4Aidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotacideidentifA)
+modelprotacideidentifB <- glmer(senso1Bidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotacideidentifB)
+modelprotacideidentifC <- glmer(senso2Cidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotacideidentifC)
+modelprotacideidentifD <- glmer(senso5Didentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotacideidentifD)
+
+#ORAC
+modelORACacideidentifA <- glmer(senso4Aidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACacideidentifA)
+modelORACacideidentifB <- glmer(senso1Bidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACacideidentifB)
+modelORACacideidentifC <- glmer(senso2Cidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACacideidentifC)
+modelORACacideidentifD <- glmer(senso5Didentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACacideidentifD)
+
+#catalase
+modelcatalaseacideidentifA <- glmer(senso4Aidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseacideidentifA)
+modelcatalaseacideidentifB <- glmer(senso1Bidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseacideidentifB)
+modelcatalaseacideidentifC <- glmer(senso2Cidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseacideidentifC)
+modelcatalaseacideidentifD <- glmer(senso5Didentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalaseacideidentifD)
+
+#SOD
+modelSODacideidentifA <- glmer(senso4Aidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODacideidentifA)
+modelSODacideidentifB <- glmer(senso1Bidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODacideidentifB)
+modelSODacideidentifC <- glmer(senso2Cidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODacideidentifC)
+modelSODacideidentifD <- glmer(senso5Didentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODacideidentifD)
+
+#######
+#sucré#
+#######
+
+#MDA
+modelMDAsucreidentifA <- glmer(senso5Aidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsucreidentifA)
+modelMDAsucreidentifB <- glmer(senso6Bidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsucreidentifB)
+modelMDAsucreidentifC <- glmer(senso4Cidentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsucreidentifC)
+modelMDAsucreidentifD <- glmer(senso3Didentification ~ MDA + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelMDAsucreidentifD)
+
+#prot
+modelprotsucreidentifA <- glmer(senso5Aidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsucreidentifA)
+modelprotsucreidentifB <- glmer(senso6Bidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsucreidentifB)
+modelprotsucreidentifC <- glmer(senso4Cidentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsucreidentifC)
+modelprotsucreidentifD <- glmer(senso3Didentification ~ prot + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelprotsucreidentifD)
+
+#ORAC
+modelORACsucreidentifA <- glmer(senso2Aidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsucreidentifA)
+modelORACsucreidentifB <- glmer(senso3Bidentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsucreidentifB)
+modelORACsucreidentifC <- glmer(senso1Cidentification ~ ORAC + Moment	 + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsucreidentifC)
+modelORACsucreidentifD <- glmer(senso2Didentification ~ ORAC + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelORACsucreidentifD)
+
+#catalase
+modelcatalasesucreidentifA <- glmer(senso5Aidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesucreidentifA)
+modelcatalasesucreidentifB <- glmer(senso6Bidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesucreidentifB)
+modelcatalasesucreidentifC <- glmer(senso4Cidentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesucreidentifC)
+modelcatalasesucreidentifD <- glmer(senso3Didentification ~ catalase + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelcatalasesucreidentifD)
+
+#SOD
+modelSODsucreidentifA <- glmer(senso5Aidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsucreidentifA)
+modelSODsucreidentifB <- glmer(senso6Bidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsucreidentifB)
+modelSODsucreidentifC <- glmer(senso4Cidentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsucreidentifC)
+modelSODsucreidentifD <- glmer(senso3Didentification ~ SOD + Moment + (1 + Moment | nom), data = k, family = binomial)
+summary(modelSODsucreidentifD)
+
+
+###########
+#intensité#
+###########
+
+#salé
+
+#MDA
+modelMDAsaleintensA <- lmer(senso2Aintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsaleintensA)
+modelMDAsaleintensB <- lmer(senso3Bintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsaleintensB)
+modelMDAsaleintensC <- lmer(senso1Cintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsaleintensC)
+modelMDAsaleintensD <- lmer(senso2Dintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsaleintensD)
+
+#prot
+modelprotsaleintensA <- lmer(senso2Aintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsaleintensA)
+modelprotsaleintensB <- lmer(senso3Bintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsaleintensB)
+modelprotsaleintensC <- lmer(senso1Cintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsaleintensC)
+modelprotsaleintensD <- lmer(senso2Dintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsaleintensD)
+
+#ORAC
+modelORACsaleintensA <- lmer(senso2Aintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACsaleintensA)
+modelORACsaleintensB <- lmer(senso3Bintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACsaleintensB)
+modelORACsaleintensC <- lmer(senso1Cintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACsaleintensC)
+modelORACsaleintensD <- lmer(senso2Dintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACsaleintensD)
+
+#catalase
+modelcatalasesaleintensA <- lmer(senso2Aintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesaleintensA)
+modelcatalasesaleintensB <- lmer(senso3Bintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesaleintensB)
+modelcatalasesaleintensC <- lmer(senso1Cintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesaleintensC)
+modelcatalasesaleintensD <- lmer(senso2Dintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesaleintensD)
+
+#SOD
+modelSODsaleintensA <- lmer(senso2Aintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsaleintensA)
+modelSODsaleintensB <- lmer(senso3Bintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsaleintensB)
+modelSODsaleintensC <- lmer(senso1Cintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsaleintensC)
+modelSODsaleintensD <- lmer(senso2Dintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsaleintensD)
+
+######
+#amer#
+######
+#MDA
+modelMDAamerintensA <- lmer(senso3Aintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAamerintensA)
+modelMDAamerintensB <- lmer(senso4Bintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAamerintensB)
+modelMDAamerintensC <- lmer(senso5Cintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAamerintensC)
+modelMDAamerintensD <- lmer(senso1Dintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAamerintensD)
+
+#prot
+modelprotamerintensA <- lmer(senso3Aintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotamerintensA)
+modelprotamerintensB <- lmer(senso4Bintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotamerintensB)
+modelprotamerintensC <- lmer(senso5Cintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotamerintensC)
+modelprotamerintensD <- lmer(senso1Dintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotamerintensD)
+
+#ORAC
+modelORACamerintensA <- lmer(senso3Aintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACamerintensA)
+modelORACamerintensB <- lmer(senso4Bintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACamerintensB)
+modelORACamerintensC <- lmer(senso5Cintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACamerintensC)
+modelORACamerintensD <- lmer(senso1Dintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACamerintensD)
+
+#catalase
+modelcatalaseamerintensA <- lmer(senso2Aintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseamerintensA)
+modelcatalaseamerintensB <- lmer(senso3Bintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseamerintensB)
+modelcatalaseamerintensC <- lmer(senso1Cintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseamerintensC)
+modelcatalaseamerintensD <- lmer(senso2Dintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseamerintensD)
+
+#SOD
+modelSODamerintensA <- lmer(senso3Aintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODamerintensA)
+modelSODamerintensB <- lmer(senso4Bintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODamerintensB)
+modelSODamerintensC <- lmer(senso5Cintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODamerintensC)
+modelSODamerintensD <- lmer(senso1Dintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODamerintensD)
+
+#######
+#acide#
+#######
+
+#MDA
+modelMDAacideintensA <- lmer(senso4Aintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAacideintensA)
+modelMDAacideintensB <- lmer(senso1Bintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAacideintensB)
+modelMDAacideintensC <- lmer(senso2Cintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAacideintensC)
+modelMDAacideintensD <- lmer(senso5Dintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAacideintensD)
+
+#prot
+modelprotacideintensA <- lmer(senso4Aintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotacideintensA)
+modelprotacideintensB <- lmer(senso1Bintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotacideintensB)
+modelprotacideintensC <- lmer(senso2Cintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotacideintensC)
+modelprotacideintensD <- lmer(senso5Dintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotacideintensD)
+
+#ORAC
+modelORACacideintensA <- lmer(senso4Aintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACacideintensA)
+modelORACacideintensB <- lmer(senso1Bintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACacideintensB)
+modelORACacideintensC <- lmer(senso2Cintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACacideintensC)
+modelORACacideintensD <- lmer(senso5Dintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACacideintensD)
+
+#catalase
+modelcatalaseacideintensA <- lmer(senso4Aintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseacideintensA)
+modelcatalaseacideintensB <- lmer(senso1Bintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseacideintensB)
+modelcatalaseacideintensC <- lmer(senso2Cintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseacideintensC)
+modelcatalaseacideintensD <- lmer(senso5Dintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalaseacideintensD)
+
+#SOD
+modelSODacideintensA <- lmer(senso4Aintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODacideintensA)
+modelSODacideintensB <- lmer(senso1Bintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODacideintensB)
+modelSODacideintensC <- lmer(senso2Cintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODacideintensC)
+modelSODacideintensD <- lmer(senso5Dintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODacideintensD)
+
+#######
+#sucré#
+#######
+
+#MDA
+modelMDAsucreintensA <- lmer(senso5Aintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsucreintensA)
+modelMDAsucreintensB <- lmer(senso6Bintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsucreintensB)
+modelMDAsucreintensC <- lmer(senso4Cintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsucreintensC)
+modelMDAsucreintensD <- lmer(senso3Dintensite ~ MDA + Moment + (1 + Moment | nom), data = k)
+summary(modelMDAsucreintensD)
+
+#prot
+modelprotsucreintensA <- lmer(senso5Aintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsucreintensA)
+modelprotsucreintensB <- lmer(senso6Bintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsucreintensB)
+modelprotsucreintensC <- lmer(senso4Cintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsucreintensC)
+modelprotsucreintensD <- lmer(senso3Dintensite ~ prot + Moment + (1 + Moment | nom), data = k)
+summary(modelprotsucreintensD)
+
+#ORAC
+modelORACsucreintensA <- lmer(senso2Aintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACsucreintensA)
+modelORACsucreintensB <- lmer(senso3Bintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACsucreintensB)
+modelORACsucreintensC <- lmer(senso1Cintensite ~ ORAC + Moment	 + (1 + Moment | nom), data = k)
+summary(modelORACsucreintensC)
+modelORACsucreintensD <- lmer(senso2Dintensite ~ ORAC + Moment + (1 + Moment | nom), data = k)
+summary(modelORACsucreintensD)
+
+#catalase
+modelcatalasesucreintensA <- lmer(senso5Aintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesucreintensA)
+modelcatalasesucreintensB <- lmer(senso6Bintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesucreintensB)
+modelcatalasesucreintensC <- lmer(senso4Cintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesucreintensC)
+modelcatalasesucreintensD <- lmer(senso3Dintensite ~ catalase + Moment + (1 + Moment | nom), data = k)
+summary(modelcatalasesucreintensD)
+
+#SOD
+modelSODsucreintensA <- lmer(senso5Aintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsucreintensA)
+modelSODsucreintensB <- lmer(senso6Bintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsucreintensB)
+modelSODsucreintensC <- lmer(senso4Cintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsucreintensC)
+modelSODsucreintensD <- lmer(senso3Dintensite ~ SOD + Moment + (1 + Moment | nom), data = k)
+summary(modelSODsucreintensD)
+
+########################
+#intensité du MT vs MDA#
+########################
+par(mfrow=c(1,2))
+plot(Q235~MDA, data=metal, xlab="Salivary MDA flow (µmol/ml)",ylab="Metallic taste intensity")
+plot(Q235~MDAmin, data=metal, xlab="Salivary MDA flow (µmol/min)",ylab="Metallic taste intensity")
+cor.test(metal$Q235, metal$MDA, method="spearman")
+cor.test(metal$Q235, metal$MDAmin, method="spearman")
